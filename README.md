@@ -32,8 +32,8 @@ Before you begin, ensure you have the following installed on your machine:
 
 1. **Clone the repository**:
     ```sh
-    git clone https://github.com/5ud21/Weaviate-Document-Store-using-FastAPI.git
-    cd Weaviate-Document-Store-using-FastAPI/
+    git clone https://github.com/5ud21/Weaviate-Document-Store.git
+    cd Weaviate-Document-Store/
     ```
 
 2. **Start the Docker Compose setup**:
