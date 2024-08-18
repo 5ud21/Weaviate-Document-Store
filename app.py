@@ -1,3 +1,23 @@
+"""
+app.py
+
+This module defines a FastAPI application for querying a Weaviate document store and generating answers using a custom Llama model. It provides endpoints for querying and retrieving answers.
+
+Modules:
+    - haystack.nodes: Various nodes for processing and retrieving documents.
+    - haystack.document_stores: Document stores for storing and retrieving documents.
+    - haystack: Core module for pipelines.
+    - haystack.preview.components.file_converters.pypdf: PDF to document converter.
+    - haystack.preview.dataclasses: Data classes for documents.
+    - model_add: Custom invocation layer for the Llama model.
+    - fastapi: FastAPI framework for building APIs.
+    - uvicorn: ASGI server for serving FastAPI applications.
+    - os: Operating system library.
+    - dotenv: Library for loading environment variables from a .env file.
+    - re: Regular expression library.
+    - json: JSON library.
+"""
+
 from haystack.nodes import EmbeddingRetriever, MarkdownConverter, PreProcessor, AnswerParser, PromptModel, PromptNode, PromptTemplate
 from haystack.document_stores import WeaviateDocumentStore
 from haystack import Pipeline
@@ -29,32 +49,48 @@ templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 def get_result(query):
-    # query = "Why was Manual of Air Traffrc Services prepared?"
+    """
+    Retrieves the answer to a query from the Weaviate document store and generates a detailed response using a custom Llama model.
+
+    Args:
+        query (str): The query to be answered.
+
+    Returns:
+        Tuple[str, str]: The generated answer and relevant documents.
+    """
     document_store = WeaviateDocumentStore(
         host='http://localhost',
         port=8080,
         embedding_dim=384
     )
 
-    prompt_template = PromptTemplate(prompt = """"Given the provided Documents, answer the Query. Make your answer detailed and long\n
+    prompt_template = PromptTemplate(prompt="""Given the provided Documents, answer the Query. Make your answer detailed and long\n
                                                 Query: {query}\n
                                                 Documents: {join(documents)}
                                                 Answer: 
                                             """,
-                                            output_parser=AnswerParser())
+                                     output_parser=AnswerParser())
     print("Prompt Template: ", prompt_template)
+
     def initialize_model():
+        """
+        Initializes the custom Llama model.
+
+        Returns:
+            PromptModel: The initialized Llama model.
+        """
         return PromptModel(
             model_name_or_path="model/mistral-7b-instruct-v0.1.Q4_K_S.gguf",
             invocation_layer_class=LlamaCPPInvocationLayer,
             use_gpu=False,
             max_length=512
         )
+
     model = initialize_model()
-    prompt_node = PromptNode(model_name_or_path = model, # "gpt-3.5-turbo",
-                            # api_key = OPENAI_API_KEY,
-                            max_length=1000,
-                            default_prompt_template = prompt_template)
+    prompt_node = PromptNode(model_name_or_path=model,  # "gpt-3.5-turbo",
+                             # api_key = OPENAI_API_KEY,
+                             max_length=1000,
+                             default_prompt_template=prompt_template)
     print("Prompt Node: ", prompt_node)
 
     retriever = EmbeddingRetriever(
@@ -69,7 +105,7 @@ def get_result(query):
     query_pipeline.add_node(component=prompt_node, name="PromptNode", inputs=["Retriever"])
     print("Query Pipeline: ", query_pipeline)
 
-    json_response = query_pipeline.run(query = query , params={"Retriever" : {"top_k": 5}})
+    json_response = query_pipeline.run(query=query, params={"Retriever": {"top_k": 5}})
     print("Answer: ", json_response)
     answers = json_response['answers']
     for ans in answers:
@@ -98,9 +134,9 @@ def get_result(query):
 
     relevant_documents = ""
     for i, doc_content in enumerate(document_info):
-        relevant_documents+= f"Document {i + 1} Content:"
-        relevant_documents+=doc_content
-        relevant_documents+="\n"
+        relevant_documents += f"Document {i + 1} Content:"
+        relevant_documents += doc_content
+        relevant_documents += "\n"
 
     print("Relevant Documents:", relevant_documents)
 
@@ -108,10 +144,29 @@ def get_result(query):
 
 @app.get("/")
 async def index(request: Request):
+    """
+    Renders the index page.
+
+    Args:
+        request (Request): The request object.
+
+    Returns:
+        TemplateResponse: The rendered index page.
+    """
     return templates.TemplateResponse("index.html", {"request": request})
 
 @app.post("/get_answer")
 async def get_answer(request: Request, question: str = Form(...)):
+    """
+    Retrieves the answer to a question.
+
+    Args:
+        request (Request): The request object.
+        question (str): The question to be answered.
+
+    Returns:
+        Response: The response containing the answer and relevant documents.
+    """
     print(question)
     answer, relevant_documents = get_result(question)
     response_data = jsonable_encoder(json.dumps({"answer": answer, "relevant_documents": relevant_documents}))

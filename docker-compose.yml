@@ -25,3 +25,17 @@ services:
 volumes:
   weaviate_data:
 ...
+
+#This file defines a Docker Compose configuration for setting up a Weaviate service. Here are some key points:
+
+#Version: Specifies the version of Docker Compose syntax being used (3.4).
+#Services: Defines a single service named weaviate.
+#Command: Specifies the command-line arguments for the Weaviate service, setting the host to 0.0.0.0, port to 8080, and scheme to http.
+#Image: Uses the semittechnologies/weaviate:1.21.2 Docker image.
+#Ports: Maps port 8080 on the host to port 8080 in the container.
+#Volumes: Mounts a Docker volume named weaviate_data to /var/lib/weaviate in the container.
+#Restart Policy: Configures the container to restart on failure with a limit of 0 retries.
+#Environment Variables: Sets various environment variables for configuring Weaviate, including enabling anonymous access, setting the default vectorizer module, enabling specific modules, and setting the cluster hostname.
+#Volumes: Defines a Docker volume named weaviate_data for persistent storage.
+
+#This configuration sets up a Weaviate instance with specific modules and configurations for use in a local or development environment.
